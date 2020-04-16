@@ -1,0 +1,346 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width,initial-scale=1,minimal-ui" name="viewport">
+  <link rel="stylesheet" type="text/css" href="/ui/vue-material/vue-material.min.css">
+  <link rel="stylesheet" type="text/css" href="/ui/vue-material/theme/default.css">
+  <link rel="stylesheet" type="text/css" href="/ui/fonts.css">
+  <link rel="stylesheet" type="text/css" href="/ui/index.css">
+  <title>WoadKwizz</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="text/x-template" id="app-template">
+    <md-app>
+      <md-app-toolbar class="md-primary">
+        <div class="md-toolbar-row">
+          <span class="md-display-1">WoadKwizz</span>
+          <div class="md-toolbar-section-end">
+            <md-button class="md-icon-button" @click="scoreboardVisible = true">
+              <md-icon>format_list_numbered</md-icon>
+              <md-tooltip md-direction="bottom">Punkteübersicht</md-tooltip>
+            </md-button>
+            <md-badge :md-content="errorCount" md-dense v-if="errorCount > 0">
+              <md-button class="md-icon-button" @click="consoleVisible = true; errorCount = 0">
+                <md-icon>error</md-icon>
+              </md-button>
+            </md-badge>
+            <md-button class="md-icon-button" v-else @click="consoleVisible = true">
+              <md-icon>code</md-icon>
+            </md-button>
+            <md-button class="md-icon-button" @click="aboutDialogVisible = true">
+              <md-icon>help_outline</md-icon>
+              <md-tooltip md-direction="bottom">Über WoadKwizz</md-tooltip>
+            </md-button>
+          </div>
+        </div>
+      </md-app-toolbar>
+      <md-app-content>
+        <router-view @round-finished="showScoreboardAfterDelay"></router-view>
+
+        <md-dialog :md-active.sync="scoreboardVisible">
+          <md-dialog-title>Punktestand</md-dialog-title>
+          <md-content class="md-dialog-content">
+            <md-table>
+              <md-table-row>
+                <md-table-head md-numeric>Platz</md-table-head>
+                <md-table-head>Spielername</md-table-head>
+                <md-table-head md-numeric>Gesamtpunkte</md-table-head>
+              </md-table-row>
+              <md-table-row v-for="(row, position) in scoreboard" :key="row.name">
+                <md-table-cell md-numeric>{{ position+1 }}</md-table-cell>
+                <md-table-cell>{{ row.name }}</md-table-cell>
+                <md-table-cell md-numeric><md-tooltip md-direction="top">{{ row.score_own_words }} Punkte für eigene Worte, {{ row.score_correct_guesses }} Punkte für richtiges Raten</md-tooltip>{{ row.score_total }}</md-table-cell>
+              </md-table-row>
+            </md-table>
+          </md-content>
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="scoreboardVisible = false">Schließen</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+
+        <md-dialog :md-active.sync="aboutDialogVisible">
+          <md-dialog-title>Über WoadKwizz</md-dialog-title>
+          <md-content class="md-dialog-content">
+            <p>WoadKwizz wurde von <a href="https://hoffmann-christian.info/">Christian Hoffmann</a> implementiert. Der Quellcode ist <a href="https://github.com/hoffie/woadkwizz">frei verfügbar</a>.</p>
+            <p>WoadKwizz basiert auf diversen Open-Source-Komponenten, ohne die die Umsetzung nicht möglich gewesen wäre:</p>
+            <ul>
+              <li>Backend<ul>
+                <li><a href="https://golang.org">Go</a> für die Applikations-Logik</li>
+                <li><a href="https://python.org">Python</a> für die API-Test-Cases</li>
+                <li><a href="https://github.com/gin-gonic/gin">Gin</a> als Web-Framework</li>
+                <li><a href="https://github.com/jinzhu/gorm">gorm</a> als Datenbank-Abstraktion</li>
+                <li><a href="https://sqlite.org">SQLite</a> als Datenbank</li>
+              </ul></li>
+              <li>Frontend<ul>
+                <li><a href="https://vuejs.org">Vue</a> als reaktives JavaScript-Framework</li>
+                <li><a href="https://router.vuejs.org">Vue-Router</a> als Request-Routing-Komponente</li>
+                <li><a href="https://vuematerial.io">Vue-Material</a> für die Design-Komponenten</li>
+                <li><a href="https://github.com/SortableJS/Vue.Draggable">Vue-Draggable</a> (basierend auf <a href="https://github.com/SortableJS/Sortable">Sortable.js</a>) für Drag&amp;Drop-Funktionalität</li>
+                <li><a href="https://fonts.google.com/">Google-Fonts</a> Roboto &amp; Material</li>
+              </ul></li>
+            </ul>
+
+          </md-content>
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="aboutDialogVisible = false">Schließen</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+
+        <md-dialog :md-active.sync="consoleVisible">
+          <md-dialog-title>Konsole</md-dialog-title>
+          <md-content class="md-dialog-content">
+            <md-table>
+              <md-table-row>
+                <md-table-head>Zeit</md-table-head>
+                <md-table-head>Level</md-table-head>
+                <md-table-head>Meldung</md-table-head>
+              </md-table-row>
+              <md-table-row v-for="(log, index) in logMessages" :key="index + log.time + log.level + log.message">
+                <md-table-cell>{{ log.time.toTimeString().substr(0, 8) }}</md-table-cell>
+                <md-table-cell>{{ log.level }}</md-table-cell>
+                <md-table-cell>{{ log.message }}</md-table-cell>
+              </md-table-row>
+            </md-table>
+
+          </md-content>
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="consoleVisible = false">Schließen</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+      </md-app-content>
+    </md-app>
+  </script>
+
+  <script type="text/x-template" id="new-game-template">
+    <div>
+      <h2 class="md-title">Neues Spiel</h2>
+      <div class="md-layout md-alignment-center-left">
+        <div class="md-layout-item md-size-30">
+          <md-field>
+            <label>Spielername</label>
+            <md-input ref="playerName" v-model.trim="playerName" @keyup.enter="newGame" maxlength="16"></md-input>
+          </md-field>
+        </div>
+        <div class="md-layout-item">
+          <md-button class="md-raised md-primary" @click="newGame">Neues Spiel</md-button>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="join-game-template">
+    <div>
+      <h2 class="md-title">Spiel beitreten</h2>
+      <div class="md-layout md-alignment-top-space-between">
+        <div class="md-layout-item md-layout md-gutter md-alignment-center-left">
+          <md-field class="md-layout-item md-size-40">
+            <label>Spielername</label>
+            <md-input ref="playerName" v-model.trim="playerName" @keyup.enter="joinGame" maxlength="16"></md-input>
+          </md-field>
+          <md-button class="md-layout-item md-size-15 md-raised md-primary" @click="joinGame">Beitreten</md-button>
+        </div>
+        <md-card class="md-layout-item md-size-30 players">
+          <md-card-header>
+            <div class="md-title">Bisherige Mitspieler</div>
+          </md-card-header>
+          <md-card-content>
+            <ul>
+              <li v-for="name in players">{{ name }}</li>
+            </ul>
+          </md-card-content>
+        </md-card>
+
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="player-template">
+    <md-content :class="'player md-layout md-gutter md-elevation-' + (player.is_self ? '5' : '1')" style="margin-bottom: 10px; min-height: 100px">
+      <md-toolbar class="md-dense" :md-elevation="1">
+        <h3 class="md-title" stlye="flex: 1">{{ player.name }}</h3>
+        <md-button :class="'md-dense md-icon-button' + (player.is_self && !player.is_ready ? ' md-raised md-accent' : '')" :disabled="!player.is_self || player.is_ready" @click="markReady()" :style="'visibility: ' + (board.phase == 'wait-for-ready' ? 'visible' : 'hidden')" style="margin-left: auto">
+          <md-icon>check_box{{ player.is_ready ? '' : '_outline_blank' }}</md-icon>
+          <md-tooltip md-direction="right">Bereit für nächste Runde?</md-tooltip>
+        </md-button>
+      </md-toolbar>
+      <div class="md-layout-item-100 md-layout">
+        <div class="md-layout-item">
+          <ol class="letters" :style="'opacity: ' + (player.word ? '1' : '0.2')">
+            <li v-for="(letter, index) in (player.word || player.letters).split('')" :key="index">{{ letter }}</li>
+          </ol>
+        </div>
+      </div>
+      <div class="md-layout-item md-size-100 md-layout" v-if="board.phase == 'assign-words'">
+        <draggable :list="cards" :group="{'name': 'cards', pull: true, put: cards.length == 0}" tag="div" :disabled="player.is_self" style="width: 190px; height: 90px; margin: 0 auto 16px auto" class="md-elevation-1" animation="150" @add="onCardAdd" @remove="onCardRemove">
+          <div class="md-layout-item" v-for="card in cards" :key="card.id">
+            <middle-card :text="card.text" />
+          </div>
+        </draggable>
+      </div>
+      <div :class="'md-layout-item md-size-100 md-layout' + (' board-phase-' + board.phase)" v-if="board.phase != 'assign-words'">
+        <div style="width: 190px; height: 90px; margin: 0 auto 16px auto" class="md-elevation-1">
+          <div class="md-layout-item">
+            <middle-card text="?" v-if="!correct_card.text" />
+            <transition name="bounce">
+              <md-badge v-if="correct_card.text" :md-content="correct_card.score === null ? '?' : (correct_card.score > 0 ? '+' + correct_card.score : '0')" :class="'card-badge ' + (correct_card.score === 0 ? '' : (correct_card.score > 0 ? 'md-primary' : (correct_card.score ? '' : 'hide-badge')))">
+                <md-tooltip md-direction="top" v-if="board.phase != 'submit-word'">
+                  <template v-if="correct_card.score === null">Diese Karte wurde noch nicht gewertet.</template>
+                  <template v-if="correct_card.is_self">
+                    <template v-if="correct_card.score === 0">Leider hat niemand deine Karte erraten.</template>
+                    <template v-if="correct_card.score >= 1">Deine Karte wurde {{ correct_card.score }} mal richtig geraten.</template>
+                  </template>
+                  <template v-else>
+                    <template v-if="correct_card.score === 0">Leider hattest du auf eine andere Karte getippt.</template>
+                    <template v-else>Du hast die Karte richtig zugeordnet und erhältst dafür einen Punkt.</template>
+                  </template>
+                </md-tooltip>
+                <middle-card :text="correct_card.text" />
+              </md-badge>
+            </transition>
+          </div>
+        </div>
+      </div>
+    </md-content>
+  </script>
+
+  <script type="text/x-template" id="middle-card-template">
+    <md-card style="width: 190px; height: 90px; margin: 0 auto 16px auto;" :md-with-hover="hover">
+      <md-card-header>
+        <div style="text-align: center">{{ text }}</div>
+      </md-card-header>
+    </md-card>
+  </script>
+
+  <script type="text/x-template" id="board-template">
+    <div class="md-layout">
+      <div class="md-layout-item md-size-100 md-layout md-gutter">
+        <div class="md-layout-item md-size-25">
+          <player v-for="(player, index) in board.players" :key="player.name" v-if="index % 2 == 0" :player="player" :board="board" @guess-word="onGuess" :guesses="guesses" />
+        </div>
+
+        <div class="md-layout-item md-size-50 md-layout md-alignment-top-center">
+          <div class="md-layout-item" v-if="board.phase == 'submit-word'">
+            <div class="self">
+              <md-card style="min-height: 120px; text-align: center" v-if="board.self.card.text">
+                <md-card-header>
+                  <div class="md-title">{{ board.self.card.text }}</div>
+                </md-card-header>
+              </md-card>
+              <div class="md-layout">
+                <div class="md-layout-item">
+                  <draggable :list="letters" group="letters" tag="ol" class="letters" ghost-class="ghost" animation="200">
+                    <transition-group type="transition">
+                      <li v-for="(letter, index) in letters" :key="letter + index">{{ letter }}</li>
+                    </transition-group>
+                  </draggable>
+                </div>
+                <div class="md-layout-item md-size-10"></div>
+              </div>
+              <div class="md-layout md-alignment-center-center">
+                <div class="md-layout-item">
+                  <draggable :list="word_letters" group="letters" tag="ol" class="letters md-elevation-1" ghost-class="ghost" animation="200">
+                    <transition-group type="transition">
+                      <li v-for="(letter, index) in word_letters" :key="letter + index">{{ letter }}</li>
+                    </transition-group>
+                  </draggable>
+                </div>
+                <div class="md-layout-item md-size-10">
+                  <md-button :class="'md-icon-button md-raised md-' + (board.self.word ? 'primary' : 'accent')" :disabled="board.phase != 'submit-word'" @click="submitWord">
+                    <md-icon>save</md-icon>
+                    <md-tooltip direction="top">Wort speichern</md-tooltip>
+                  </md-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="md-layout md-size-100 md-layout-item md-alignment-center-center" v-if="board.phase == 'assign-words'">
+            <draggable :list="middle_cards" group="cards" animation="150" class="md-layout md-size-100 md-layout-item md-alignment-center-left">
+              <div class="md-layout-item" v-for="card in middle_cards" v-if="!card.is_self" :key="card.id">
+                <middle-card :text="card.text" :hover="true" />
+              </div>
+            </draggable>
+            <div class="md-layout-item md-size-100" style="text-align: center">
+              <md-button :class="'md-icon-button md-raised ' + (guesses_saved ? 'md-primary' : 'md-accent')" :disabled="num_guesses <= 0 || num_guesses != board.players.length-1" @click="submitGuesses">
+                <md-icon>save</md-icon>
+                <md-tooltip direction="top">Speichern</md-tooltip>
+              </md-button>
+            </div>
+          </div>
+
+          <div class="md-layout md-size-100 md-layout-item md-alignment-center-center phase-score" v-if="board.phase == 'score'">
+            <div class="md-layout-item md-size-100 md-elevation-10 md-content md-layout md-gutter">
+              <div class="md-layout-item" style="padding-bottom: 5em">
+                <h2 class="md-title">Wort von {{ currently_scored_player.name }}</h2>
+                <ol class="letters">
+                  <li v-for="(letter, index) in (board.currently_scored.word).split('')" :key="letter + index">{{ letter }}</li>
+                </ol>
+
+                <h3 class="md-subtitle">Was wurde getippt?</h3>
+                <ul class="guesses">
+                  <li v-for="guess in currently_scored_guesses">
+                    <template v-for="(player, index) in guess.players"><span :class="player.is_self ? 'self' : ''">{{ player.name }}</span><template v-if="guess.players.length >= 2"><template v-if="index == guess.players.length - 2"> und </template><template v-else>, </template></template></template>
+                    dachte<template v-if="guess.players.length > 1">n</template>:<br />
+                    <i>{{ guess.card.text }}</i>
+                  </li>
+                </ul>
+                <h3 class="md-subtitle">Was ist wirklich richtig?</h3>
+                <div v-if="currently_scored_player.is_self">
+                  <p>Löse auf, welche Karte du hattest und was deine Erklärung ist, warum dein Wort gut zu erraten war...</p>
+                  <md-button class="md-raised md-accent" @click="markScored">
+                    Für alle auflösen
+                  </md-button>
+                </div>
+                <div v-else>
+                  {{ currently_scored_player.name }} wird es gleich auflösen...
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="md-size-100 md-layout-item md-alignment-center-center" v-if="board.phase == 'wait-for-ready' && board.round <= 1">
+            <h3 class="md-title">Einladungs-Link</h3>
+            <p>
+              <a :href="baseURL + this.$router.resolve({name: 'JoinGame', params: { 'game_token': this.$route.params.game_token }}).href">{{ baseURL + this.$router.resolve({name: 'JoinGame', params: { 'game_token': this.$route.params.game_token } }).href }}</a>
+            </p>
+          </div>
+
+        </div>
+        <div class="md-layout-item md-size-25">
+          <player v-for="(player, index) in board.players" :key="player.name" v-if="index % 2 == 1" :player="player" :board="board" @guess-word="onGuess" :guesses="guesses" />
+        </div>
+      </div>
+
+      <md-snackbar md-position="center" :md-active="board.phase == 'wait-for-ready' && board.round <= 1" :md-duration="Infinity">
+        Schickt den Einladungs-Link an insgesamt mindestens drei Mitspieler.
+        Klickt auf euren roten Knopf, wenn ihr komplett seid.
+      </md-snackbar>
+
+      <md-snackbar md-position="center" :md-active="board.phase == 'wait-for-ready' && board.round > 1" :md-duration="Infinity">
+        Runde {{ board.round }} startet sobald alle Spieler bereit sind.
+      </md-snackbar>
+
+      <md-snackbar md-position="center" :md-active="board.phase == 'submit-word'" :md-duration="Infinity">
+        Ziehe Buchstaben in die darunterliegende Reihe, um ein ein Wort zu bilden, mit dem deine Mitspieler später deine Karte erraten können und speichere dann mit dem roten Knopf.
+      </md-snackbar>
+
+      <md-snackbar md-position="center" :md-active="board.phase == 'assign-words'" :md-duration="Infinity">
+        Ziehe die Karten aus der Mitte auf die freie Fläche unterhalb der Wörter deiner Mitspieler. Sobald alle Spieler jedem anderen Spieler eine Karte zugeordnet haben, folgt die Auflösung der Runde.
+      </md-snackbar>
+
+      <md-snackbar md-position="center" :md-active="board.phase == 'score'" :md-duration="Infinity">
+      Erzählt z.B. via Chat, Video oder Telefon nun reihum, welche Tipps eurem zu Wort abgegeben wurden, verratet die richtige Lösung und versucht zu erklären, was ihr euch bei eurem Wort gedacht haben...
+      </md-snackbar>
+    </div>
+  </script>
+
+  <script type="text/javascript" src="/ui/vue.min.js"></script>
+  <script type="text/javascript" src="/ui/vue-router.min.js"></script>
+  <script type="text/javascript" src="/ui/vue-material/vue-material.min.js"></script>
+  <script type="text/javascript" src="/ui/Sortable.min.js"></script>
+  <script type="text/javascript" src="/ui/vuedraggable.umd.min.js"></script>
+  <script type="text/javascript" src="/ui/app.js"></script>
+</body>
+</html>

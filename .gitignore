@@ -1,0 +1,7 @@
+*.swp
+*.swo
+*.sqlite
+*.sqlite-journal
+test.pid
+cards.txt
+woadkwizz

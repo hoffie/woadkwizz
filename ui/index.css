@@ -1,0 +1,78 @@
+.letters {
+    min-height: 30px;
+    padding: 5px;
+    display: block;
+    margin: 16px;
+    font-family: "DejaVu Sans Mono", monospace;
+    text-align: center;
+    font-size: 120%;
+}
+.letters > span {
+    display: block;
+    min-height: 35px;
+    min-width: 120px;
+}
+.letters li {
+    display: inline-block;
+    text-align: center;
+    width: 40px;
+    padding: 5px;
+    margin: 0 3px;
+    border: solid 1px #ddd;
+    background: #fdfaf1;
+    cursor: move;
+    font-weight: bold;
+}
+
+.letters li i {
+    cursor: pointer;
+}
+
+.letters li.ghost {
+    background: #eee;
+    opacity: 0.5;
+}
+
+.player .letters {
+    margin: 0 0 5px 0;
+}
+.player .letters li {
+    font-size: 80%;
+    width: 20px;
+    padding: 2px 5px;
+    margin: 0 1px;
+    cursor: text;
+}
+.phase-score .letters li {
+    cursor: text;
+}
+.phase-score li {
+    margin-bottom: 1em;
+}
+.phase-score span.self {
+    font-weight: bold;
+}
+.card-badge.hide-badge .md-badge {
+    display: none;
+}
+
+.card-badge .md-badge {
+    opacity: 0.8;
+    background: #ddd;
+    color: #111;
+}
+
+.board-phase-score .bounce-enter-active {
+  animation: bounce-in .5s;
+}
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
