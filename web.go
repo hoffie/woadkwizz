@@ -493,7 +493,6 @@ func getBoardJson(player Player) (jsonBoard, error) {
 	q = q.Where("words.round = ?", player.Round)
 	q = q.Group("words.id")
 	q = q.Order("words.id")
-	q = q.Debug()
 	q = q.Scan(&words)
 	err = q.Error
 	if err != nil {
