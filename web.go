@@ -343,6 +343,8 @@ func startNewRound(game *Game) error {
 		numAdditionalCards := len(players) + 1
 		if len(players) <= 5 {
 			numAdditionalCards = 6 - len(players)
+		} else {
+			numAdditionalCards = 1
 		}
 		for x := 0; x < numAdditionalCards; x++ {
 			err := assignCard(nil)
