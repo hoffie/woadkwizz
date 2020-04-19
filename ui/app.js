@@ -253,6 +253,7 @@ const Board = {
       'middle_cards': [],
       'scoreboard': [],
       'scoreboardVisible': false,
+      'helpSnackbarsEnabled': true,
     }
   },
   methods: {

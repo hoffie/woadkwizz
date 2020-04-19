@@ -321,16 +321,25 @@
         Runde {{ board.round }} startet sobald alle Spieler bereit sind.
       </md-snackbar>
 
-      <md-snackbar md-position="center" :md-active="board.phase == 'submit-word' && board.round <= 1" :md-duration="Infinity">
+      <md-snackbar md-position="center" :md-active="board.phase == 'submit-word' && board.round <= 1 && helpSnackbarsEnabled" :md-duration="Infinity">
         Ziehe Buchstaben in die darunterliegende Reihe, um ein ein Wort zu bilden, mit dem deine Mitspieler später deine Karte erraten können und speichere dann mit dem roten Knopf.
+        <md-button class="md-primary md-icon-button" @click="helpSnackbarsEnabled = false">
+          <md-icon>close</md-icon>
+        </md-button>
       </md-snackbar>
 
-      <md-snackbar md-position="center" :md-active="board.phase == 'assign-words' && board.round <= 1" :md-duration="Infinity">
+      <md-snackbar md-position="center" :md-active="board.phase == 'assign-words' && board.round <= 1 && helpSnackbarsEnabled" :md-duration="Infinity">
         Ziehe die Karten aus der Mitte auf die freie Fläche unterhalb der Wörter deiner Mitspieler. Sobald alle Spieler jedem anderen Spieler eine Karte zugeordnet haben, folgt die Auflösung der Runde.
+        <md-button class="md-primary md-icon-button" @click="helpSnackbarsEnabled = false">
+          <md-icon>close</md-icon>
+        </md-button>
       </md-snackbar>
 
-      <md-snackbar md-position="center" :md-active="board.phase == 'score' && board.round <= 1" :md-duration="Infinity">
+      <md-snackbar md-position="center" :md-active="board.phase == 'score' && board.round <= 1 && helpSnackbarsEnabled" :md-duration="Infinity">
         Erzählt z.B. via Chat, Video oder Telefon nun reihum, welche Tipps eurem zu Wort abgegeben wurden, verratet die richtige Lösung und versucht zu erklären, was ihr euch bei eurem Wort gedacht haben...
+        <md-button class="md-primary md-icon-button" @click="helpSnackbarsEnabled = false">
+          <md-icon>close</md-icon>
+        </md-button>
       </md-snackbar>
 
       <md-dialog :md-active.sync="scoreboardVisible">
