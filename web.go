@@ -383,6 +383,7 @@ type jsonPlayer struct {
 	ScoreTotal          uint64 `json:"score_total"`
 	ScoreOwnWords       uint64 `json:"score_own_words"`
 	ScoreCorrectGuesses uint64 `json:"score_correct_guesses"`
+	AllWordsAssigned    bool   `json:"all_words_assigned"`
 }
 
 type jsonSelf struct {
@@ -466,6 +467,12 @@ func getBoardJson(player Player) (jsonBoard, error) {
 	if err != nil {
 		return board, err
 	}
+
+	wordsAssignedByPlayer, err := getWordsAssignedByPlayers(player.Game.ID, len(players))
+	if err != nil {
+		return board, err
+	}
+
 	for _, otherPlayer := range players {
 		var word Word
 		err = db.Model(&otherPlayer).Related(&word).Error
@@ -483,6 +490,7 @@ func getBoardJson(player Player) (jsonBoard, error) {
 			ScoreTotal:          scoreByPlayer[otherPlayer.ID].ScoreTotal,
 			ScoreOwnWords:       scoreByPlayer[otherPlayer.ID].ScoreOwnWords,
 			ScoreCorrectGuesses: scoreByPlayer[otherPlayer.ID].ScoreCorrectGuesses,
+			AllWordsAssigned:    wordsAssignedByPlayer[otherPlayer.ID],
 		})
 		if otherPlayer.ID == player.ID {
 			board.Self.IsReady = isReady
@@ -897,4 +905,26 @@ func getScoreByPlayers(gameID uint64) ([]uint64, map[uint64]scoreByPlayer, error
 		resultsByPlayer[result.PlayerID] = result
 	}
 	return resultOrder, resultsByPlayer, nil
+}
+
+func getWordsAssignedByPlayers(gameID uint64, numPlayers int) (map[uint64]bool, error) {
+	resultsByPlayer := make(map[uint64]bool, 0)
+	var results []struct {
+		ID               uint64
+		AllWordsAssigned bool
+	}
+	q := db.Table("players")
+	q = q.Select("players.*, (COUNT(guesses.id) == ?) AS all_words_assigned", numPlayers-1)
+	q = q.Joins("LEFT JOIN guesses ON guesses.game_id = players.game_id AND guesses.round = players.round AND guesses.player_id = players.id")
+	q = q.Where("players.game_id = ?", gameID)
+	q = q.Group("players.id, guesses.player_id")
+	q = q.Scan(&results)
+	err := q.Error
+	if err != nil {
+		return resultsByPlayer, err
+	}
+	for _, result := range results {
+		resultsByPlayer[result.ID] = result.AllWordsAssigned
+	}
+	return resultsByPlayer, nil
 }

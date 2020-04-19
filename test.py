@@ -340,12 +340,17 @@ class TestAPI(unittest.TestCase):
 
     def test_assign_all_words(self):
         self.test_submit_word()
-        for player_token in self.player_token.values():
+        for loop, player_token in enumerate(self.player_token.values()):
             p = '/games/%s/players/%s' % (self.game_token, player_token)
             r = requests.get(self.api(p))
             self.assertEqual(r.status_code, 200)
             j = r.json()
             self.assertEqual(j['phase'], 'assign-words')
+            players_with_all_words_assigned = 0
+            for player in j['players']:
+                if player['all_words_assigned']:
+                    players_with_all_words_assigned += 1
+            self.assertEqual(players_with_all_words_assigned, loop)
             self.assertEqual(len(j['cards']), 3+3)
             usable_card_ids = []
             for card in j['cards']:
@@ -376,6 +381,8 @@ class TestAPI(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             j = r.json()
             self.assertEqual(j['phase'], 'score')
+            for player in j['players']:
+                self.assertEqual(player['all_words_assigned'], True)
 
     def test_assign_words_fail_on_missing_player(self):
         self.test_submit_word()

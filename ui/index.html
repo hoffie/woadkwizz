@@ -136,17 +136,30 @@
 
   <script type="text/x-template" id="player-template">
     <md-content :class="'player md-layout md-gutter md-elevation-' + (player.is_self ? '5' : '1')" style="margin-bottom: 10px; min-height: 100px">
-        <md-toolbar class="md-dense" :md-elevation="1">
-          <h3 class="md-title" stlye="flex: 1">{{ player.name }}</h3>
-          <md-chip style="margin-left: 1em">
-            <md-tooltip md-direction="top">Punkte von {{ player.name }}</md-tooltip>
-            {{ player.score_total }}
-          </md-chip>
-          <md-button :class="'md-dense md-icon-button' + (player.is_self && !player.is_ready ? ' md-raised md-accent' : '')" :disabled="!player.is_self || player.is_ready" @click="markReady()" :style="'visibility: ' + (board.phase == 'wait-for-ready' ? 'visible' : 'hidden')" style="margin-left: auto">
+      <md-toolbar class="md-dense" :md-elevation="1">
+        <h3 class="md-title" stlye="flex: 1">{{ player.name }}</h3>
+        <md-chip style="margin-left: 1em">
+          <md-tooltip md-direction="top">Punkte von {{ player.name }}</md-tooltip>
+          {{ player.score_total }}
+        </md-chip>
+        <div style="margin-left: auto">
+          <md-button :class="'md-dense md-icon-button' + (player.is_self && !player.is_ready ? ' md-raised md-accent' : '')" :disabled="!player.is_self || player.is_ready" @click="markReady()" v-if="board.phase == 'wait-for-ready'">
             <md-icon>check_box{{ player.is_ready ? '' : '_outline_blank' }}</md-icon>
             <md-tooltip md-direction="right">Bereit für nächste Runde?</md-tooltip>
           </md-button>
-        </md-toolbar>
+          <md-icon class="md-dense md-icon-button" v-if="board.phase == 'assign-words'" style="opacity: 0.3">
+          check_box{{ player.all_words_assigned ? '' : '_outline_blank' }}
+            <md-tooltip md-direction="right">
+              <template v-if="player.all_words_assigned">
+                {{ player.name }} hat Zuordnungen für alle Wörter abgegeben.
+              </template>
+              <template v-else>
+                {{ player.name }} hat noch keine Wort-Zuordnungen gespeichert.
+              </template>
+            </md-tooltip>
+          </md-icon>
+        </div>
+      </md-toolbar>
       <div class="md-layout-item-100 md-layout">
         <div class="md-layout-item">
           <ol class="letters" :style="'opacity: ' + (player.word ? '1' : '0.2')">
