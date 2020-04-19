@@ -362,6 +362,7 @@ type jsonBoard struct {
 	Phase           string              `json:"phase"`
 	Cards           []jsonCard          `json:"cards"`
 	CurrentlyScored jsonCurrentlyScored `json:"currently_scored"`
+	ScoreboardOrder []uint64            `json:"scoreboard_order"`
 }
 
 type jsonCard struct {
@@ -373,13 +374,15 @@ type jsonCard struct {
 }
 
 type jsonPlayer struct {
-	ID      uint64 `json:"id"`
-	Name    string `json:"name"`
-	IsReady bool   `json:"is_ready"`
-	IsSelf  bool   `json:"is_self"`
-	Letters string `json:"letters"`
-	Word    string `json:"word"`
-	Score   uint64 `json:"score"`
+	ID                  uint64 `json:"id"`
+	Name                string `json:"name"`
+	IsReady             bool   `json:"is_ready"`
+	IsSelf              bool   `json:"is_self"`
+	Letters             string `json:"letters"`
+	Word                string `json:"word"`
+	ScoreTotal          uint64 `json:"score_total"`
+	ScoreOwnWords       uint64 `json:"score_own_words"`
+	ScoreCorrectGuesses uint64 `json:"score_correct_guesses"`
 }
 
 type jsonSelf struct {
@@ -452,10 +455,11 @@ func getBoardJson(player Player) (jsonBoard, error) {
 		return board, err
 	}
 
-	_, scoreByPlayer, err := getScoreByPlayers(player.Game.ID)
+	scoreboardOrder, scoreByPlayer, err := getScoreByPlayers(player.Game.ID)
 	if err != nil {
 		return board, err
 	}
+	board.ScoreboardOrder = scoreboardOrder
 
 	var players []Player
 	err = db.Model(&player.Game).Related(&players).Error
@@ -470,13 +474,15 @@ func getBoardJson(player Player) (jsonBoard, error) {
 		}
 		isReady := otherPlayer.Round >= player.Game.Round
 		board.Players = append(board.Players, jsonPlayer{
-			ID:      otherPlayer.ID,
-			Name:    otherPlayer.Name,
-			IsReady: isReady,
-			IsSelf:  otherPlayer.ID == player.ID,
-			Letters: word.Letters,
-			Word:    word.Word,
-			Score:   scoreByPlayer[otherPlayer.ID].ScoreTotal,
+			ID:                  otherPlayer.ID,
+			Name:                otherPlayer.Name,
+			IsReady:             isReady,
+			IsSelf:              otherPlayer.ID == player.ID,
+			Letters:             word.Letters,
+			Word:                word.Word,
+			ScoreTotal:          scoreByPlayer[otherPlayer.ID].ScoreTotal,
+			ScoreOwnWords:       scoreByPlayer[otherPlayer.ID].ScoreOwnWords,
+			ScoreCorrectGuesses: scoreByPlayer[otherPlayer.ID].ScoreCorrectGuesses,
 		})
 		if otherPlayer.ID == player.ID {
 			board.Self.IsReady = isReady
@@ -858,39 +864,6 @@ func markScored(c *gin.Context) {
 	broker.Send(player.Game.ID, "board")
 	broker.Send(player.Game.ID, "scoreboard")
 	c.JSON(200, nil)
-}
-
-func getScoreboard(c *gin.Context) {
-	game, err := getVerifiedGame(c)
-	if err != nil {
-		if err != err4xx {
-			log.Printf("failed to find verified game: %s", err)
-			c.AbortWithStatus(500)
-		}
-		return
-	}
-
-	resultOrder, results, err := getScoreByPlayers(game.ID)
-	if err != nil {
-		log.Printf("scoring failed: %s", err)
-		c.AbortWithStatus(500)
-		return
-	}
-
-	board := jsonScoreboard{
-		Scoreboard: make([]jsonScoreboardRow, 0),
-	}
-
-	for _, playerID := range resultOrder {
-		result := results[playerID]
-		board.Scoreboard = append(board.Scoreboard, jsonScoreboardRow{
-			Name:                result.Name,
-			ScoreTotal:          result.ScoreTotal,
-			ScoreOwnWords:       result.ScoreOwnWords,
-			ScoreCorrectGuesses: result.ScoreCorrectGuesses,
-		})
-	}
-	c.JSON(200, board)
 }
 
 type scoreByPlayer struct {

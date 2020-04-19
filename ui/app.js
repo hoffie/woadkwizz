@@ -204,6 +204,7 @@ Vue.component('middle-card', {
 
 const Board = {
   template: '#board-template',
+  props: ['scoreboardButtonPressed'],
   computed: {
     currently_scored_player: function() {
       var player_id = this.board.currently_scored.player_id;
@@ -250,9 +251,16 @@ const Board = {
       'num_guesses': 0,
       'guesses_saved': false,
       'middle_cards': [],
+      'scoreboard': [],
+      'scoreboardVisible': false,
     }
   },
   methods: {
+    showScoreboardAfterDelay: function() {
+      window.setTimeout(function() {
+        this.scoreboardVisible = true;
+      }.bind(this), 500);
+    },
     getCard: function(id) {
       for (var i = 0; i < this.board.cards.length; i++) {
         var card = this.board.cards[i];
@@ -262,6 +270,7 @@ const Board = {
       }
     },
     getPlayer: function(id) {
+      // TODO performance: should be map-based lookup
       for (var i = 0; i < this.board.players.length; i++) {
         var player = this.board.players[i];
         if (player.id == id) {
@@ -269,19 +278,40 @@ const Board = {
         }
       }
     },
+    updateScoreboard: function() {
+      var new_scoreboard = [];
+      for (var i = 0; i < this.board.scoreboard_order.length; i++) {
+        var player_id = this.board.scoreboard_order[i];
+        var player = this.getPlayer(player_id);
+        new_scoreboard.push({
+          name: player.name,
+          score_own_words: player.score_own_words,
+          score_correct_guesses: player.score_correct_guesses,
+          score_total: player.score_total,
+        });
+      }
+      this.scoreboard = new_scoreboard;
+    },
     fetch: function() {
       if (!this.$route.params.player_token) return;
       GET('/api/games/' + this.$route.params.game_token + '/players/' + this.$route.params.player_token).then((d) => {
-        if (this.board.phase == 'score' && d.phase != 'score') {
-          this.$emit('round-finished');
-        }
         if (d.phase == 'submit-word' && this.board.phase != 'submit-word') {
           this.word_letters = d.self.word.split('');
           this.letters = d.self.letters.split('');
           this.num_guesses = 0;
           this.guesses_saved = false;
         }
+
+        // must be called before the board is replaced:
+        if (this.board.phase == 'score' && d.phase != 'score') {
+          this.showScoreboardAfterDelay();
+        }
+
         this.board = d;
+
+        // must be called after the new board is set:
+        this.updateScoreboard();
+
         if (this.board.phase == 'assign-words') {
           GET('/api/games/' + this.$route.params.game_token + '/players/' + this.$route.params.player_token + '/guesses').then((g) => {
             if (this.num_guesses != 0) {
@@ -336,6 +366,18 @@ const Board = {
       App.addEventListener('players', this.fetch);
       App.addEventListener('board', this.fetch);
     });
+  },
+  watch: {
+    'scoreboardVisible': function() {
+      if (!this.scoreboardVisible) {
+        this.$emit('scoreboard-closed');
+      }
+    },
+    'scoreboardButtonPressed': function(next, prev) {
+      if (next == true) {
+        this.scoreboardVisible = true;
+      }
+    },
   },
 }
 
@@ -408,9 +450,8 @@ const app = new Vue({
   data: function() {
     return {
       aboutDialogVisible: false,
-      scoreboardVisible: false,
+      scoreboardButtonPressed: false,
       consoleVisible: false,
-      scoreboard: [],
       errorCount: 0,
       logMessages: [],
     };
@@ -418,9 +459,6 @@ const app = new Vue({
   mounted: function() {
     App.log = this.log;
     App.setupEventSource(this.$route.params.game_token);
-    this.$nextTick(function() {
-      App.addEventListener('scoreboard', this.updateScoreboard);
-    });
   },
   watch: {
     '$route': function(to, from) {
@@ -431,17 +469,6 @@ const app = new Vue({
     },
   },
   methods: {
-    updateScoreboard: function() {
-      if (!this.$route.params.game_token) return;
-      GET('/api/games/' + this.$route.params.game_token + '/scoreboard').then((d) => {
-        this.scoreboard = d.scoreboard;
-      });
-    },
-    showScoreboardAfterDelay: function() {
-      window.setTimeout(function() {
-        this.scoreboardVisible = true;
-      }.bind(this), 500);
-    },
     log: function(level, message) {
       if (level == "error") {
         this.errorCount++;

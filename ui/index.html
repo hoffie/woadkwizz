@@ -16,7 +16,7 @@
         <div class="md-toolbar-row">
           <span class="md-display-1">WoadKwizz</span>
           <div class="md-toolbar-section-end">
-            <md-button class="md-icon-button" @click="scoreboardVisible = true">
+            <md-button class="md-icon-button" @click="scoreboardButtonPressed = true">
               <md-icon>format_list_numbered</md-icon>
               <md-tooltip md-direction="bottom">Punkteübersicht</md-tooltip>
             </md-button>
@@ -36,28 +36,7 @@
         </div>
       </md-app-toolbar>
       <md-app-content>
-        <router-view @round-finished="showScoreboardAfterDelay"></router-view>
-
-        <md-dialog :md-active.sync="scoreboardVisible">
-          <md-dialog-title>Punktestand</md-dialog-title>
-          <md-content class="md-dialog-content">
-            <md-table>
-              <md-table-row>
-                <md-table-head md-numeric>Platz</md-table-head>
-                <md-table-head>Spielername</md-table-head>
-                <md-table-head md-numeric>Gesamtpunkte</md-table-head>
-              </md-table-row>
-              <md-table-row v-for="(row, position) in scoreboard" :key="row.name">
-                <md-table-cell md-numeric>{{ position+1 }}</md-table-cell>
-                <md-table-cell>{{ row.name }}</md-table-cell>
-                <md-table-cell md-numeric><md-tooltip md-direction="top">{{ row.score_own_words }} Punkt<template v-if="row.score_own_words != 1">e</template> für eigene Worte, {{ row.score_correct_guesses }} Punkt<template v-if="row.score_correct_guesses != 1">e</template> für richtiges Raten</md-tooltip>{{ row.score_total }}</md-table-cell>
-              </md-table-row>
-            </md-table>
-          </md-content>
-          <md-dialog-actions>
-            <md-button class="md-primary" @click="scoreboardVisible = false">Schließen</md-button>
-          </md-dialog-actions>
-        </md-dialog>
+        <router-view :scoreboardButtonPressed="scoreboardButtonPressed" @scoreboard-closed="scoreboardButtonPressed = false"></router-view>
 
         <md-dialog :md-active.sync="aboutDialogVisible">
           <md-dialog-title>Über WoadKwizz</md-dialog-title>
@@ -161,7 +140,7 @@
           <h3 class="md-title" stlye="flex: 1">{{ player.name }}</h3>
           <md-chip style="margin-left: 1em">
             <md-tooltip md-direction="top">Punkte von {{ player.name }}</md-tooltip>
-            {{ player.score }}
+            {{ player.score_total }}
           </md-chip>
           <md-button :class="'md-dense md-icon-button' + (player.is_self && !player.is_ready ? ' md-raised md-accent' : '')" :disabled="!player.is_self || player.is_ready" @click="markReady()" :style="'visibility: ' + (board.phase == 'wait-for-ready' ? 'visible' : 'hidden')" style="margin-left: auto">
             <md-icon>check_box{{ player.is_ready ? '' : '_outline_blank' }}</md-icon>
@@ -340,6 +319,28 @@
       <md-snackbar md-position="center" :md-active="board.phase == 'score'" :md-duration="Infinity">
       Erzählt z.B. via Chat, Video oder Telefon nun reihum, welche Tipps eurem zu Wort abgegeben wurden, verratet die richtige Lösung und versucht zu erklären, was ihr euch bei eurem Wort gedacht haben...
       </md-snackbar>
+
+      <md-dialog :md-active.sync="scoreboardVisible">
+        <md-dialog-title>Punktestand</md-dialog-title>
+        <md-content class="md-dialog-content">
+          <md-table>
+            <md-table-row>
+              <md-table-head md-numeric>Platz</md-table-head>
+              <md-table-head>Spielername</md-table-head>
+              <md-table-head md-numeric>Gesamtpunkte</md-table-head>
+            </md-table-row>
+            <md-table-row v-for="(row, position) in scoreboard" :key="row.name">
+              <md-table-cell md-numeric>{{ position+1 }}</md-table-cell>
+              <md-table-cell>{{ row.name }}</md-table-cell>
+              <md-table-cell md-numeric><md-tooltip md-direction="top">{{ row.score_own_words }} Punkt<template v-if="row.score_own_words != 1">e</template> für eigene Worte, {{ row.score_correct_guesses }} Punkt<template v-if="row.score_correct_guesses != 1">e</template> für richtiges Raten</md-tooltip>{{ row.score_total }}</md-table-cell>
+            </md-table-row>
+          </md-table>
+        </md-content>
+        <md-dialog-actions>
+          <md-button class="md-primary" @click="scoreboardVisible = false">Schließen</md-button>
+        </md-dialog-actions>
+      </md-dialog>
+
     </div>
   </script>
 

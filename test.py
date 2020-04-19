@@ -192,8 +192,12 @@ class TestAPI(unittest.TestCase):
         r = requests.get(self.api(p))
         self.assertEqual(r.status_code, 200)
         j = r.json()
+        self.assertEqual(len(j['scoreboard_order']), 3)
         for x in range(3):
-            self.assertEqual(j['players'][x]['score'], 0)
+            self.assertEqual(j['players'][x]['score_total'], 0)
+            self.assertEqual(j['players'][x]['score_own_words'], 0)
+            self.assertEqual(j['players'][x]['score_correct_guesses'], 0)
+            self.assertTrue(j['players'][x]['id'] in j['scoreboard_order'])
 
     def test_player_ready(self):
         self.test_player_join()
@@ -558,19 +562,6 @@ class TestAPI(unittest.TestCase):
                 revealed_cards += 1
         self.assertEqual(revealed_cards, 3)
         self.assertEqual(j['phase'], 'wait-for-ready')
-
-    def test_scoreboard(self):
-        self.test_score()
-        p = '/games/%s/scoreboard' % self.game_token
-        r = requests.get(self.api(p))
-        self.assertEqual(r.status_code, 200)
-        j = r.json()
-        self.assertEqual(len(j['scoreboard']), 3)
-        self.assertTrue(isinstance(j['scoreboard'][0]['name'], str))
-        self.assertTrue(isinstance(j['scoreboard'][0]['score_total'], int))
-        self.assertTrue(isinstance(j['scoreboard'][0]['score_own_words'], int))
-        self.assertTrue(isinstance(j['scoreboard'][0]['score_correct_guesses'], int))
-
 
 
 if __name__ == '__main__':

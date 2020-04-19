@@ -73,7 +73,6 @@ func main() {
 	router.GET("/api/games/:game_token/events", streamGameEvents)
 	router.POST("/api/games/:game_token/players", joinGame)
 	router.GET("/api/games/:game_token/players", getPlayerList)
-	router.GET("/api/games/:game_token/scoreboard", getScoreboard)
 	router.PUT("/api/games/:game_token/players/:player_token/ready", markPlayerReady)
 	router.GET("/api/games/:game_token/players/:player_token", getBoard)
 	router.PUT("/api/games/:game_token/players/:player_token/word", submitWord)
