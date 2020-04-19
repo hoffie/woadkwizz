@@ -413,7 +413,7 @@ const router = new VueRouter({
 var App = {
   eventSource: null,
   game_token: null,
-  eventSourceReconnectTime: 1,
+  eventSourceReconnectTime: 0.2,
   setupEventSource: function(game_token) {
     if (!game_token) return;
     if (App.eventSource && App.game_token == game_token) return;
@@ -424,7 +424,7 @@ var App = {
       console.log("eventSource failed:", err);
       App.eventSource = null;
       App.eventListenerRequestsIdx = 0;
-      if (App.eventSourceReconnectTime < 64) {
+      if (App.eventSourceReconnectTime < 32) {
         App.eventSourceReconnectTime *= 2;
       }
       console.log("scheduling eventSource reconnect in seconds:", App.eventSourceReconnectTime);
