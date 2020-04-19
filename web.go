@@ -894,7 +894,7 @@ func getScoreByPlayers(gameID uint64) ([]uint64, map[uint64]scoreByPlayer, error
 	q = q.Joins("LEFT JOIN guesses AS own_words_guesses ON own_words.id = own_words_guesses.word_id AND own_words.card_id = own_words_guesses.card_id AND own_words.is_scored = 1")
 	q = q.Where("players.game_id = ?", gameID)
 	q = q.Group("players.id")
-	q = q.Order("score_total DESC, players.id")
+	q = q.Order("score_total DESC, score_own_words DESC, score_correct_guesses DESC, players.id")
 	q = q.Scan(&results)
 	err := q.Error
 	if err != nil {
