@@ -303,6 +303,9 @@
           <div class="md-size-100 md-layout-item md-alignment-center-center" v-if="board.phase == 'wait-for-ready' && board.round <= 1">
             <h3 class="md-title">Einladungs-Link</h3>
             <p>
+              Schicke den nachfolgenden Link z.B. via E-Mail an weitere Spieler, damit sie beitreten können.
+            </p>
+            <p>
               <a :href="baseURL + this.$router.resolve({name: 'JoinGame', params: { 'game_token': this.$route.params.game_token }}).href">{{ baseURL + this.$router.resolve({name: 'JoinGame', params: { 'game_token': this.$route.params.game_token } }).href }}</a>
             </p>
           </div>
