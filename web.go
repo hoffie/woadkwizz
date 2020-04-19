@@ -379,6 +379,7 @@ type jsonPlayer struct {
 	IsSelf  bool   `json:"is_self"`
 	Letters string `json:"letters"`
 	Word    string `json:"word"`
+	Score   uint64 `json:"score"`
 }
 
 type jsonSelf struct {
@@ -451,6 +452,11 @@ func getBoardJson(player Player) (jsonBoard, error) {
 		return board, err
 	}
 
+	_, scoreByPlayer, err := getScoreByPlayers(player.Game.ID)
+	if err != nil {
+		return board, err
+	}
+
 	var players []Player
 	err = db.Model(&player.Game).Related(&players).Error
 	if err != nil {
@@ -470,6 +476,7 @@ func getBoardJson(player Player) (jsonBoard, error) {
 			IsSelf:  otherPlayer.ID == player.ID,
 			Letters: word.Letters,
 			Word:    word.Word,
+			Score:   scoreByPlayer[otherPlayer.ID].ScoreTotal,
 		})
 		if otherPlayer.ID == player.ID {
 			board.Self.IsReady = isReady
@@ -863,38 +870,58 @@ func getScoreboard(c *gin.Context) {
 		return
 	}
 
-	board := jsonScoreboard{
-		Scoreboard: make([]jsonScoreboardRow, 0),
-	}
-	var results []struct {
-		Name                string
-		ScoreTotal          uint64
-		ScoreOwnWords       uint64
-		ScoreCorrectGuesses uint64
-	}
-	q := db.Table("players")
-	q = q.Select("players.name, COUNT(DISTINCT correct_guesses_words.id) AS score_correct_guesses, COUNT(DISTINCT own_words_guesses.id) AS score_own_words")
-	q = q.Joins("LEFT JOIN guesses AS correct_guesses ON correct_guesses.player_id = players.id")
-	q = q.Joins("LEFT JOIN words AS correct_guesses_words ON correct_guesses.word_id = correct_guesses_words.id AND correct_guesses_words.is_scored = 1 AND correct_guesses.card_id = correct_guesses_words.card_id")
-	q = q.Joins("LEFT JOIN words AS own_words ON own_words.player_id = players.id")
-	q = q.Joins("LEFT JOIN guesses AS own_words_guesses ON own_words.id = own_words_guesses.word_id AND own_words.card_id = own_words_guesses.card_id AND own_words.is_scored = 1")
-	q = q.Where("players.game_id = ?", game.ID)
-	q = q.Group("players.id")
-	q = q.Order("(score_correct_guesses+score_own_words) DESC, players.id")
-	q = q.Scan(&results)
-	err = q.Error
+	resultOrder, results, err := getScoreByPlayers(game.ID)
 	if err != nil {
 		log.Printf("scoring failed: %s", err)
 		c.AbortWithStatus(500)
 		return
 	}
-	for _, result := range results {
+
+	board := jsonScoreboard{
+		Scoreboard: make([]jsonScoreboardRow, 0),
+	}
+
+	for _, playerID := range resultOrder {
+		result := results[playerID]
 		board.Scoreboard = append(board.Scoreboard, jsonScoreboardRow{
 			Name:                result.Name,
-			ScoreTotal:          result.ScoreOwnWords + result.ScoreCorrectGuesses,
+			ScoreTotal:          result.ScoreTotal,
 			ScoreOwnWords:       result.ScoreOwnWords,
 			ScoreCorrectGuesses: result.ScoreCorrectGuesses,
 		})
 	}
 	c.JSON(200, board)
+}
+
+type scoreByPlayer struct {
+	PlayerID            uint64
+	Name                string
+	ScoreTotal          uint64
+	ScoreOwnWords       uint64
+	ScoreCorrectGuesses uint64
+}
+
+func getScoreByPlayers(gameID uint64) ([]uint64, map[uint64]scoreByPlayer, error) {
+	resultsByPlayer := make(map[uint64]scoreByPlayer, 0)
+	var resultOrder []uint64
+	var results []scoreByPlayer
+	q := db.Table("players")
+	q = q.Select("players.id AS player_id, players.name, COUNT(DISTINCT correct_guesses_words.id) AS score_correct_guesses, COUNT(DISTINCT own_words_guesses.id) AS score_own_words, (COUNT(DISTINCT correct_guesses_words.id) + COUNT(DISTINCT own_words_guesses.id)) AS score_total")
+	q = q.Joins("LEFT JOIN guesses AS correct_guesses ON correct_guesses.player_id = players.id")
+	q = q.Joins("LEFT JOIN words AS correct_guesses_words ON correct_guesses.word_id = correct_guesses_words.id AND correct_guesses_words.is_scored = 1 AND correct_guesses.card_id = correct_guesses_words.card_id")
+	q = q.Joins("LEFT JOIN words AS own_words ON own_words.player_id = players.id")
+	q = q.Joins("LEFT JOIN guesses AS own_words_guesses ON own_words.id = own_words_guesses.word_id AND own_words.card_id = own_words_guesses.card_id AND own_words.is_scored = 1")
+	q = q.Where("players.game_id = ?", gameID)
+	q = q.Group("players.id")
+	q = q.Order("score_total DESC, players.id")
+	q = q.Scan(&results)
+	err := q.Error
+	if err != nil {
+		return resultOrder, resultsByPlayer, err
+	}
+	for _, result := range results {
+		resultOrder = append(resultOrder, result.PlayerID)
+		resultsByPlayer[result.PlayerID] = result
+	}
+	return resultOrder, resultsByPlayer, nil
 }

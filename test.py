@@ -186,6 +186,15 @@ class TestAPI(unittest.TestCase):
         r = requests.get(self.api(p))
         self.assertEqual(r.status_code, 404)
 
+    def test_zero_score(self):
+        self.test_player_join()
+        p = '/games/%s/players/%s' % (self.game_token, self.player_token[0])
+        r = requests.get(self.api(p))
+        self.assertEqual(r.status_code, 200)
+        j = r.json()
+        for x in range(3):
+            self.assertEqual(j['players'][x]['score'], 0)
+
     def test_player_ready(self):
         self.test_player_join()
 

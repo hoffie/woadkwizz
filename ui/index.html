@@ -50,7 +50,7 @@
               <md-table-row v-for="(row, position) in scoreboard" :key="row.name">
                 <md-table-cell md-numeric>{{ position+1 }}</md-table-cell>
                 <md-table-cell>{{ row.name }}</md-table-cell>
-                <md-table-cell md-numeric><md-tooltip md-direction="top">{{ row.score_own_words }} Punkte für eigene Worte, {{ row.score_correct_guesses }} Punkte für richtiges Raten</md-tooltip>{{ row.score_total }}</md-table-cell>
+                <md-table-cell md-numeric><md-tooltip md-direction="top">{{ row.score_own_words }} Punkt<template v-if="row.score_own_words != 1">e</template> für eigene Worte, {{ row.score_correct_guesses }} Punkt<template v-if="row.score_correct_guesses != 1">e</template> für richtiges Raten</md-tooltip>{{ row.score_total }}</md-table-cell>
               </md-table-row>
             </md-table>
           </md-content>
@@ -157,13 +157,17 @@
 
   <script type="text/x-template" id="player-template">
     <md-content :class="'player md-layout md-gutter md-elevation-' + (player.is_self ? '5' : '1')" style="margin-bottom: 10px; min-height: 100px">
-      <md-toolbar class="md-dense" :md-elevation="1">
-        <h3 class="md-title" stlye="flex: 1">{{ player.name }}</h3>
-        <md-button :class="'md-dense md-icon-button' + (player.is_self && !player.is_ready ? ' md-raised md-accent' : '')" :disabled="!player.is_self || player.is_ready" @click="markReady()" :style="'visibility: ' + (board.phase == 'wait-for-ready' ? 'visible' : 'hidden')" style="margin-left: auto">
-          <md-icon>check_box{{ player.is_ready ? '' : '_outline_blank' }}</md-icon>
-          <md-tooltip md-direction="right">Bereit für nächste Runde?</md-tooltip>
-        </md-button>
-      </md-toolbar>
+        <md-toolbar class="md-dense" :md-elevation="1">
+          <h3 class="md-title" stlye="flex: 1">{{ player.name }}</h3>
+          <md-chip style="margin-left: 1em">
+            <md-tooltip md-direction="top">Punkte von {{ player.name }}</md-tooltip>
+            {{ player.score }}
+          </md-chip>
+          <md-button :class="'md-dense md-icon-button' + (player.is_self && !player.is_ready ? ' md-raised md-accent' : '')" :disabled="!player.is_self || player.is_ready" @click="markReady()" :style="'visibility: ' + (board.phase == 'wait-for-ready' ? 'visible' : 'hidden')" style="margin-left: auto">
+            <md-icon>check_box{{ player.is_ready ? '' : '_outline_blank' }}</md-icon>
+            <md-tooltip md-direction="right">Bereit für nächste Runde?</md-tooltip>
+          </md-button>
+        </md-toolbar>
       <div class="md-layout-item-100 md-layout">
         <div class="md-layout-item">
           <ol class="letters" :style="'opacity: ' + (player.word ? '1' : '0.2')">
@@ -187,12 +191,12 @@
                 <md-tooltip md-direction="top" v-if="board.phase != 'submit-word'">
                   <template v-if="correct_card.score === null">Diese Karte wurde noch nicht gewertet.</template>
                   <template v-if="correct_card.is_self">
-                    <template v-if="correct_card.score === 0">Leider hat niemand deine Karte erraten.</template>
+                    <template v-if="correct_card.score === 0">Leider kein Punkt für dich, weil niemand deine Karte erraten hat.</template>
                     <template v-if="correct_card.score >= 1">Deine Karte wurde {{ correct_card.score }} mal richtig geraten.</template>
                   </template>
                   <template v-else>
-                    <template v-if="correct_card.score === 0">Leider hattest du auf eine andere Karte getippt.</template>
-                    <template v-else>Du hast die Karte richtig zugeordnet und erhältst dafür einen Punkt.</template>
+                    <template v-if="correct_card.score === 0">Leider kein Punkt für dich, weil du auf eine andere Karte getippt hattest.</template>
+                    <template v-else>Ein Punkt für dich, weil du diese Karte richtig zugeordnet hattest.</template>
                   </template>
                 </md-tooltip>
                 <middle-card :text="correct_card.text" />
