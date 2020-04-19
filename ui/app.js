@@ -245,6 +245,7 @@ const Board = {
         'cards': [],
         'players': [],
       },
+      'show_currently_scored': false,
       'letters': [],
       'word_letters': [],
       'guesses': {},
@@ -257,11 +258,6 @@ const Board = {
     }
   },
   methods: {
-    showScoreboardAfterDelay: function() {
-      window.setTimeout(function() {
-        this.scoreboardVisible = true;
-      }.bind(this), 500);
-    },
     getCard: function(id) {
       for (var i = 0; i < this.board.cards.length; i++) {
         var card = this.board.cards[i];
@@ -303,9 +299,30 @@ const Board = {
           this.guesses_saved = false;
         }
 
+        var animTime = 0;
+        if (this.board.phase == 'score' && this.show_currently_scored) {
+          // longer animation
+          animTime = 2000;
+        }
         // must be called before the board is replaced:
         if (this.board.phase == 'score' && d.phase != 'score') {
-          this.showScoreboardAfterDelay();
+          this.show_currently_scored = false;
+          // wait for animation to finish, then switch board,
+          // update scoreboard and display it.
+          window.setTimeout(function() {
+            this.board = d;
+            this.updateScoreboard();
+            this.scoreboardVisible = true;
+          }.bind(this), animTime);
+          // end early to avoid updating the board here:
+          return;
+        }
+
+        if (this.board.currently_scored != d.currently_scored) {
+          this.show_currently_scored = false;
+          window.setTimeout(function() {
+            this.show_currently_scored = true;
+          }.bind(this), animTime);
         }
 
         this.board = d;

@@ -266,33 +266,35 @@
           </div>
 
           <div class="md-layout md-size-100 md-layout-item md-alignment-center-center phase-score" v-if="board.phase == 'score'">
-            <div class="md-layout-item md-size-100 md-elevation-10 md-content md-layout md-gutter">
-              <div class="md-layout-item" style="padding-bottom: 5em">
-                <h2 class="md-title">Wort von {{ currently_scored_player.name }}</h2>
-                <ol class="letters">
-                  <li v-for="(letter, index) in (board.currently_scored.word).split('')" :key="letter + index">{{ letter }}</li>
-                </ol>
+            <transition name="bounce">
+              <div class="md-layout-item md-size-100 md-elevation-10 md-content md-layout md-gutter" v-if="show_currently_scored">
+                <div class="md-layout-item" style="padding-bottom: 5em">
+                  <h2 class="md-title">Wort von {{ currently_scored_player.name }}</h2>
+                  <ol class="letters">
+                    <li v-for="(letter, index) in (board.currently_scored.word).split('')" :key="letter + index">{{ letter }}</li>
+                  </ol>
 
-                <h3 class="md-subtitle">Was wurde getippt?</h3>
-                <ul class="guesses">
-                  <li v-for="guess in currently_scored_guesses">
-                    <template v-for="(player, index) in guess.players"><span :class="player.is_self ? 'self' : ''">{{ player.name }}</span><template v-if="guess.players.length >= 2"><template v-if="index == guess.players.length - 2"> und </template><template v-else>, </template></template></template>
-                    dachte<template v-if="guess.players.length > 1">n</template>:<br />
-                    <i>{{ guess.card.text }}</i>
-                  </li>
-                </ul>
-                <h3 class="md-subtitle">Was ist wirklich richtig?</h3>
-                <div v-if="currently_scored_player.is_self">
-                  <p>Löse auf, welche Karte du hattest und was deine Erklärung ist, warum dein Wort gut zu erraten war...</p>
-                  <md-button class="md-raised md-accent" @click="markScored">
-                    Für alle auflösen
-                  </md-button>
-                </div>
-                <div v-else>
-                  {{ currently_scored_player.name }} wird es gleich auflösen...
+                  <h3 class="md-subtitle">Was wurde getippt?</h3>
+                  <ul class="guesses">
+                    <li v-for="guess in currently_scored_guesses">
+                      <template v-for="(player, index) in guess.players"><span :class="player.is_self ? 'self' : ''">{{ player.name }}</span><template v-if="guess.players.length >= 2"><template v-if="index == guess.players.length - 2"> und </template><template v-else>, </template></template></template>
+                      dachte<template v-if="guess.players.length > 1">n</template>:<br />
+                      <i>{{ guess.card.text }}</i>
+                    </li>
+                  </ul>
+                  <h3 class="md-subtitle">Was ist wirklich richtig?</h3>
+                  <div v-if="currently_scored_player.is_self">
+                    <p>Löse auf, welche Karte du hattest und was deine Erklärung ist, warum dein Wort gut zu erraten war...</p>
+                    <md-button class="md-raised md-accent" @click="markScored">
+                      Für alle auflösen
+                    </md-button>
+                  </div>
+                  <div v-else>
+                    {{ currently_scored_player.name }} wird es gleich auflösen...
+                  </div>
                 </div>
               </div>
-            </div>
+            </transition>
           </div>
 
 
