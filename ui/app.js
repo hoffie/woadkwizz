@@ -463,9 +463,6 @@ const app = new Vue({
   watch: {
     '$route': function(to, from) {
       App.setupEventSource(this.$route.params.game_token);
-      this.$nextTick(function() {
-        this.updateScoreboard();
-      });
     },
   },
   methods: {
