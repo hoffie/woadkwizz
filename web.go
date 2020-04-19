@@ -612,7 +612,7 @@ func submitWord(c *gin.Context) {
 		return
 	}
 
-	if len(w.Word) > WORD_NUM_LETTERS_TOTAL {
+	if len([]rune(w.Word)) > WORD_NUM_LETTERS_TOTAL {
 		c.JSON(400, gin.H{"error": "too many letters"})
 		return
 	}

@@ -279,7 +279,7 @@ class TestAPI(unittest.TestCase):
     def test_submit_word(self):
         self.test_game_start()
 
-        for x in self.player_token:
+        for loop, x in enumerate(self.player_token):
             p = '/games/%s/players/%s' % (self.game_token, self.player_token[x])
             r = requests.get(self.api(p))
             self.assertEqual(r.status_code, 200)
@@ -287,6 +287,8 @@ class TestAPI(unittest.TestCase):
             self.assertEqual(j['phase'], 'submit-word')
 
             word = j['self']['letters'][1:4]
+            if loop == 0:
+                word = j['self']['letters']
             p = '/games/%s/players/%s/word' % (self.game_token, self.player_token[x])
             r = requests.put(self.api(p), json={
                 'word': word,
@@ -519,7 +521,8 @@ class TestAPI(unittest.TestCase):
         j = r.json()
         self.assertEqual(j['phase'], 'score')
         self.assertTrue(isinstance(j['currently_scored']['word'], str))
-        self.assertEqual(len(j['currently_scored']['word']), 3)
+        # Test words are always 3 or 12 (all letters) letters long:
+        self.assertTrue(len(j['currently_scored']['word']) in (3, 12))
         self.assertTrue(isinstance(j['currently_scored']['player_id'], int))
         self.assertEqual(len(list(j['currently_scored']['guesses'].keys())), 2)
         self.assertTrue(isinstance(list(j['currently_scored']['guesses'].keys())[0], str))
