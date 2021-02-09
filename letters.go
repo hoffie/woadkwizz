@@ -7,7 +7,7 @@ import (
 const ()
 
 var (
-	VOCALS                 = []rune("AAEEIIOOUUÄÖÜY")
+	VOCALS                 = []rune("AAAEEEIIIOOOUUUÄÖÜY")
 	VOCALS_LEN             = len(VOCALS)
 	CONSONANTS             = []rune("BCDFGHJKLMNPQRSTVWXZ")
 	CONSONANTS_LEN         = len(CONSONANTS)
