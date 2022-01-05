@@ -26,6 +26,7 @@ var cardsPath string
 var dbPath string
 var assetsPath string
 var listen string
+var trustedProxy string
 var debug bool
 
 func init() {
@@ -33,6 +34,7 @@ func init() {
 	flag.StringVar(&dbPath, "dbPath", "game.sqlite", "path to the file containing sqlite database")
 	flag.StringVar(&assetsPath, "assetsPath", "./ui", "path to the directory containing static files")
 	flag.StringVar(&listen, "listen", "127.0.0.1:3000", "host:port to listen on")
+	flag.StringVar(&trustedProxy, "trustedProxy", "127.0.0.1", "ip address of the reverse proxy in front of woadkwizz ")
 	flag.BoolVar(&debug, "debug", false, "whether to enable debugging features")
 }
 
@@ -64,6 +66,7 @@ func main() {
 	if debug {
 		pprof.Register(router)
 	}
+	router.SetTrustedProxies([]string{trustedProxy})
 
 	router.StaticFile("/", filepath.Join(assetsPath, "index.html"))
 	router.GET("/games/:game_token", serveIndex)
